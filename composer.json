@@ -1,0 +1,21 @@
+{
+  "name": "vearutop/pinba-pure-php",
+  "type": "library",
+  "description": "Pinba extension drop-in replacement",
+  "keywords": ["pinba"],
+  "homepage": "https://github.com/vearutop/pinba-pure-php",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Viacheslav Poturaev",
+      "email": "vearutop@gmail.com",
+      "homepage": "https://github.com/vearutop"
+    }
+  ],
+  "require": {
+    "php": ">=5.3.0"
+  },
+  "autoload": {
+    "files": ["src/pinba_loader.php"]
+  }
+}
