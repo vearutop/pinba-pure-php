@@ -304,7 +304,7 @@ function pinba_request_time_set($request_time) {
  */
 function pinba_tag_set($tag, $value) {
     pinba::$requestTags[$tag] = $value;
-    return $this;
+    return true;
 }
 
 /**
