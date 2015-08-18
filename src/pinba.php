@@ -246,7 +246,7 @@ function pinba_hostname_set($hostname) {
  *
  * @link https://github.com/tony2001/pinba_engine/wiki/PHP-extension#pinba_flush
  */
-function pinba_flush($script_name = '', $flags) {
+function pinba_flush($script_name = '', $flags = 0) {
     pinba::flush($script_name, $flags);
 }
 
@@ -749,7 +749,7 @@ class pinba
             $struct['dictionary'] = array();
         }
 
-        $dictionary = array_flip($struct['dictionary']);
+        $dictionary = $struct['dictionary'];
 
         if (isset($struct['timers'])) {
             foreach ($struct['timers'] as $timer) {
@@ -769,8 +769,8 @@ class pinba
             }
         }
 
-        foreach ($struct['dictionary'] as $value) {
-            self::stringField(15, $value);
+        foreach ($struct['dictionary'] as $key => $id) {
+            self::stringField(15, $key);
         }
 
         if (is_int($struct['status'])) {
@@ -807,9 +807,10 @@ class pinba
         $tags = array();
         // build tag dictionary and index timer tags
         $dict = array();
+        $dictId = 0;
         if (isset($struct['timers'])) {
             foreach ($struct['timers'] as $id => $timer) {
-                $tag = md5(var_export($timer['tags'], true));
+                $tag = serialize($timer['tags']);
                 if (isset($tags[$tag])) {
                     $struct['timers'][$tags[$tag]]['value'] = $struct['timers'][$tags[$tag]]['value'] + $timer['value'];
                     $struct['timers'][$tags[$tag]]['count'] = $struct['timers'][$tags[$tag]]['count'] + 1;
@@ -821,15 +822,23 @@ class pinba
             }
             foreach ($struct['timers'] as $id => $timer) {
                 foreach ($timer['tags'] as $tag => $value) {
-                    if (($tagid = array_search($tag, $dict)) === false) {
-                        $tagid = count($dict);
-                        $dict[] = $tag;
+                    if (!isset($dict[$tag])) {
+                        $tagId = $dictId++;
+                        $dict[$tag] = $tagId;
                     }
-                    if (($valueid = array_search($value, $dict)) === false) {
-                        $valueid = count($dict);
-                        $dict[] = $value;
+                    else {
+                        $tagId = $dict[$tag];
                     }
-                    $struct['timers'][$id]['tagids'][$tagid] = $valueid;
+
+                    if (!isset($dict[$value])) {
+                        $valueId = $dictId++;
+                        $dict[$value] = $valueId;
+                    }
+                    else {
+                        $valueId = $dict[$value];
+                    }
+
+                    $struct['timers'][$id]['tagids'][$tagId] = $valueId;
                 }
             }
             foreach ($struct['timers'] as $timer) {
@@ -842,9 +851,7 @@ class pinba
                 }
             }
         }
-        foreach ($dict as $tag) {
-            $struct['dictionary'][] = $tag;
-        }
+        $struct['dictionary'] = $dict;
         return $struct;
     }
 
