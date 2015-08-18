@@ -10,6 +10,20 @@
       "name": "Viacheslav Poturaev",
       "email": "vearutop@gmail.com",
       "homepage": "https://github.com/vearutop"
+    },
+    {
+      "name": "Xavier Barbosa",
+      "email": "xavier.barbosa@iscool-e.com",
+      "homepage": "https://github.com/johnnoone"
+    },
+    {
+      "name": "Gaetano Giunta",
+      "homepage": "https://github.com/gggeek"
+    },
+    {
+      "name": "Nikolay Bondarenko",
+      "email": "misterionkell@gmail.com",
+      "homepage": "https://github.com/misterion/pinba-phpdoc"
     }
   ],
   "require": {
@@ -17,5 +31,8 @@
   },
   "autoload": {
     "files": ["src/pinba_loader.php"]
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^4.8"
   }
 }

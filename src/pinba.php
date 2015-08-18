@@ -23,7 +23,7 @@ const PINBA_ONLY_STOPPED_TIMERS = 1;
  * @param array $tags An array of tags and their values in the form of "tag" => "value". Cannot contain numeric indexes for obvious reasons.
  * @param array $data Optional array with user data, not sent to the server.
  *
- * @return resource Always returns new timer resource.
+ * @return integer Always returns new timer resource.
  * @link https://github.com/tony2001/pinba_engine/wiki/PHP-extension#pinba_timer_start
  *
  * @example
@@ -377,10 +377,10 @@ class pinba
         $time = microtime(true);
         ++self::$timerId;
         self::$timers[self::$timerId] = array(
-            "value" => $time,
-            "tags" => $tags,
-            "started" => false,
-            "data" => $data
+            'value' => $time,
+            'tags' => $tags,
+            'started' => true,
+            'data' => $data
         );
         return self::$timerId;
     }
@@ -388,10 +388,10 @@ class pinba
     static function timer_add($tags, $value, $data = null) {
         ++self::$timerId;
         self::$timers[self::$timerId] = array(
-            "value" => $value,
-            "tags" => $tags,
-            "started" => false,
-            "data" => $data
+            'value' => $value,
+            'tags' => $tags,
+            'started' => false,
+            'data' => $data
         );
         return self::$timerId;
     }
@@ -406,9 +406,9 @@ class pinba
     {
         $time = microtime(true);
         if (isset(self::$timers[$timer])) {
-            if (self::$timers[$timer]["started"]) {
-                self::$timers[$timer]["started"] = false;
-                self::$timers[$timer]["value"] = $time - self::$timers[$timer]["value"];
+            if (self::$timers[$timer]['started']) {
+                self::$timers[$timer]['started'] = false;
+                self::$timers[$timer]['value'] = $time - self::$timers[$timer]['value'];
                 return true;
             }
             else {
@@ -443,7 +443,7 @@ class pinba
     static function timer_tags_merge($timer, $tags)
     {
         if (isset(self::$timers[$timer])) {
-            self::$timers[$timer]["tags"] = array_merge(self::$timers[$timer]["tags"], $tags);
+            self::$timers[$timer]['tags'] = array_merge(self::$timers[$timer]['tags'], $tags);
             return true;
         }
         return false;
@@ -459,7 +459,7 @@ class pinba
     static function timer_tags_replace($timer, $tags)
     {
         if (isset(self::$timers[$timer])) {
-            self::$timers[$timer]["tags"] = $tags;
+            self::$timers[$timer]['tags'] = $tags;
             return true;
         }
         return false;
@@ -475,7 +475,7 @@ class pinba
     static function timer_data_merge($timer, $data)
     {
         if (isset(self::$timers[$timer])) {
-            self::$timers[$timer]["data"] = array_merge(self::$timers[$timer]["data"], $data);
+            self::$timers[$timer]['data'] = array_merge(self::$timers[$timer]['data'], $data);
             return true;
         }
         return false;
@@ -492,7 +492,7 @@ class pinba
     static function timer_data_replace($timer, $data)
     {
         if (isset(self::$timers[$timer])) {
-            self::$timers[$timer]["data"] = $data;
+            self::$timers[$timer]['data'] = $data;
             return true;
         }
         return false;
@@ -527,8 +527,8 @@ class pinba
     {
         if (isset(self::$timers[$timer])) {
             $timer = self::$timers[$timer];
-            if ($timer["started"]) {
-                $timer["value"] = $time - $timer["value"];
+            if ($timer['started']) {
+                $timer['value'] = $time - $timer['value'];
             }
             return $timer;
         }
@@ -560,9 +560,9 @@ class pinba
     {
         $time = microtime(true);
         foreach (self::$timers as &$timer) {
-            if ($timer["started"]) {
-                $timer["started"] = false;
-                $timer["value"] = $time - $timer["value"];
+            if ($timer['started']) {
+                $timer['started'] = false;
+                $timer['value'] = $time - $timer['value'];
             }
         }
         return true;
@@ -612,14 +612,14 @@ class pinba
     {
         $time = microtime(true);
         $results = array(
-            "mem_peak_usage" => memory_get_peak_usage(true),
-            "req_time" => null === self::$requestTime ? ($time - self::$start) : self::$requestTime,
-            "ru_utime" => 0,
-            "ru_stime" => 0,
-            "req_count" => 0,
-            "doc_size" => 0,
-            "server_name" => (self::$serverName != null ? self::$serverName : 'unknown'),
-            "script_name" => (self::$scriptName != null ? self::$scriptName : '-')
+            'mem_peak_usage' => memory_get_peak_usage(true),
+            'req_time' => null === self::$requestTime ? ($time - self::$start) : self::$requestTime,
+            'ru_utime' => 0,
+            'ru_stime' => 0,
+            'req_count' => 0,
+            'doc_size' => 0,
+            'server_name' => self::$serverName !== null ? self::$serverName : 'unknown',
+            'script_name' => self::$scriptName !== null ? self::$scriptName : '-',
         );
         if (function_exists('getrusage')) {
             $rUsage = getrusage();
@@ -678,6 +678,17 @@ class pinba
     }
 
 
+    private static $autoFlush = 1;
+    static function ini_set_auto_flush($autoFlush) {
+        if ('off' === strtolower($autoFlush)) {
+            $autoFlush = false;
+        }
+        else {
+            $autoFlush = (bool)$autoFlush;
+        }
+        self::$autoFlush = $autoFlush;
+    }
+
     /**
      * Useful when you need to send request data to the server immediately (for long running scripts).
      * You can use optional argument script_name to set custom script name.
@@ -720,7 +731,7 @@ class pinba
     }
 
 
-    private static function prepareMessage($struct)
+    public static function prepareMessage($struct)
     {
         self::$resource = fopen('php://memory', 'wb');
 
@@ -734,21 +745,28 @@ class pinba
         self::floatField(8, $struct['ru_utime']);
         self::floatField(9, $struct['ru_stime']);
 
+        if (!isset($struct['dictionary'])) {
+            $struct['dictionary'] = array();
+        }
+
         $dictionary = array_flip($struct['dictionary']);
-        foreach ($struct['timers'] as $timer) {
-            self::integerField(10, 1);
-            self::floatField(11, $timer['value']);
 
-            $tag_count = 0;
-            foreach ($timer['tags'] as $tagName => $tagValue) {
-                self::integerField(13, $dictionary[$tagName]);
-                self::integerField(14, $dictionary[$tagValue]);
+        if (isset($struct['timers'])) {
+            foreach ($struct['timers'] as $timer) {
+                self::integerField(10, 1);
+                self::floatField(11, $timer['value']);
 
-                ++$tag_count;
+                $tag_count = 0;
+                foreach ($timer['tags'] as $tagName => $tagValue) {
+                    self::integerField(13, $dictionary[$tagName]);
+                    self::integerField(14, $dictionary[$tagValue]);
+
+                    ++$tag_count;
+                }
+
+                // tag_count
+                self::integerField(12, $tag_count);
             }
-
-            // tag_count
-            self::integerField(12, $tag_count);
         }
 
         foreach ($struct['dictionary'] as $value) {
@@ -768,62 +786,64 @@ class pinba
     /**
      * Builds the php array structure to be sent to the pinba server
      */
-    static private function get_packet_info($script_name = null)
+    static public function get_packet_info($script_name = null)
     {
         $struct = static::get_info();
         // massage info into correct format for pinba server
-        $struct["status"] = 0;
-        $struct["hostname"] = self::$hostname;
+        $struct['status'] = 0;
+        $struct['hostname'] = self::$hostname;
         if ($script_name != null) {
-            $struct["script_name"] = $script_name;
+            $struct['script_name'] = $script_name;
         }
         foreach (array(
-                     "mem_peak_usage" => "memory_peak",
-                     "req_time" => "request_time",
-                     "req_count" => "request_count",
-                     "doc_size" => "document_size",
+                     'mem_peak_usage' => 'memory_peak',
+                     'req_time' => 'request_time',
+                     'req_count' => 'request_count',
+                     'doc_size' => 'document_size',
                  ) as $old => $new) {
             $struct[$new] = $struct[$old];
         }
         // merge timers by tags
         $tags = array();
-        foreach ($struct["timers"] as $id => $timer) {
-            $tag = md5(var_export($timer["tags"], true));
-            if (isset($tags[$tag])) {
-                $struct["timers"][$tags[$tag]]["value"] = $struct["timers"][$tags[$tag]]["value"] + $timer["value"];
-                $struct["timers"][$tags[$tag]]["count"] = $struct["timers"][$tags[$tag]]["count"] + 1;
-                unset($struct["timers"][$id]);
-            } else {
-                $tags[$tag] = $id;
-                $struct["timers"][$id]["count"] = 1;
-            }
-        }
         // build tag dictionary and index timer tags
         $dict = array();
-        foreach ($struct["timers"] as $id => $timer) {
-            foreach ($timer['tags'] as $tag => $value) {
-                if (($tagid = array_search($tag, $dict)) === false) {
-                    $tagid = count($dict);
-                    $dict[] = $tag;
+        if (isset($struct['timers'])) {
+            foreach ($struct['timers'] as $id => $timer) {
+                $tag = md5(var_export($timer['tags'], true));
+                if (isset($tags[$tag])) {
+                    $struct['timers'][$tags[$tag]]['value'] = $struct['timers'][$tags[$tag]]['value'] + $timer['value'];
+                    $struct['timers'][$tags[$tag]]['count'] = $struct['timers'][$tags[$tag]]['count'] + 1;
+                    unset($struct['timers'][$id]);
+                } else {
+                    $tags[$tag] = $id;
+                    $struct['timers'][$id]['count'] = 1;
                 }
-                if (($valueid = array_search($value, $dict)) === false) {
-                    $valueid = count($dict);
-                    $dict[] = $value;
-                }
-                $struct["timers"][$id]['tagids'][$tagid] = $valueid;
             }
-        }
-        foreach ($struct["timers"] as $timer) {
-            $struct["timer_hit_count"][] = $timer["count"];
-            $struct["timer_value"][] = $timer["value"];
-            $struct["timer_tag_count"][] = count($timer["tags"]);
-            foreach ($timer["tagids"] as $key => $val) {
-                $struct["timer_tag_name"][] = $key;
-                $struct["timer_tag_value"][] = $val;
+            foreach ($struct['timers'] as $id => $timer) {
+                foreach ($timer['tags'] as $tag => $value) {
+                    if (($tagid = array_search($tag, $dict)) === false) {
+                        $tagid = count($dict);
+                        $dict[] = $tag;
+                    }
+                    if (($valueid = array_search($value, $dict)) === false) {
+                        $valueid = count($dict);
+                        $dict[] = $value;
+                    }
+                    $struct['timers'][$id]['tagids'][$tagid] = $valueid;
+                }
+            }
+            foreach ($struct['timers'] as $timer) {
+                $struct['timer_hit_count'][] = $timer['count'];
+                $struct['timer_value'][] = $timer['value'];
+                $struct['timer_tag_count'][] = count($timer['tags']);
+                foreach ($timer['tagids'] as $key => $val) {
+                    $struct['timer_tag_name'][] = $key;
+                    $struct['timer_tag_value'][] = $val;
+                }
             }
         }
         foreach ($dict as $tag) {
-            $struct["dictionary"][] = $tag;
+            $struct['dictionary'][] = $tag;
         }
         return $struct;
     }
@@ -840,7 +860,9 @@ class pinba
             self::$start = $time;
         }
         if (self::$hostname == null) {
-            self::$hostname = gethostname();
+            self::$hostname = isset($_SERVER['HOST_NAME'])
+                ? $_SERVER['HOST_NAME']
+                : gethostname();
         }
         if (self::$scriptName == null && isset($_SERVER['SCRIPT_NAME'])) {
             self::$scriptName = $_SERVER['SCRIPT_NAME'];
@@ -850,7 +872,7 @@ class pinba
         }
         if (!self::$shutdownRegistered) {
             self::$shutdownRegistered = true;
-            register_shutdown_function('pinba::flush');
+            register_shutdown_function('pinba::shutdownHandler');
         }
 
     }
@@ -934,6 +956,13 @@ class pinba
     {
         self::writeInteger($field_id << 3 | 5);
         self::writeFloat($field_value);
+    }
+
+
+    public static function shutdownHandler() {
+        if (self::$autoFlush) {
+            self::flush();
+        }
     }
 
 }
