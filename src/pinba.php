@@ -355,7 +355,7 @@ class pinba
 {
     public static $schema; // todo use it
     public static $requestTime;
-    public static $requestTags = array(); // todo use it
+    public static $requestTags = array();
 
     private static $timers = array();
     private static $scriptName = null;
@@ -767,6 +767,10 @@ class pinba
                 // tag_count
                 self::integerField(12, $tag_count);
             }
+            foreach (self::$requestTags as $tagName => $tagValue) {
+                self::integerField(20, $dictionary[$tagName]);
+                self::integerField(21, $dictionary[$tagValue]);
+            }
         }
 
         foreach ($struct['dictionary'] as $key => $id) {
@@ -849,6 +853,12 @@ class pinba
                     $struct['timer_tag_name'][] = $key;
                     $struct['timer_tag_value'][] = $val;
                 }
+            }
+            foreach (self::$requestTags as $tagName => $tagValue) {
+                $tagId = $dictId++;
+                $dict[$tagName] = $tagId;
+                $tagId = $dictId++;
+                $dict[$tagValue] = $tagId;
             }
         }
         $struct['dictionary'] = $dict;
