@@ -113,14 +113,31 @@ class PinbaTest extends PHPUnit_Framework_TestCase
                     'value1' => 1,
                     'tag2' => 2,
                     'value2' => 3,
+                    'tagrequest1' => 4,
+                    'tagrequestvalue1' => 5,
+                    'tagrequest2' => 6,
+                    'tagrequestvalue2' => 7,
                 ),
+            'tag_name' =>
+                array (
+                    4,
+                    6
+                ),
+            'tag_value' =>
+                array (
+                    5,
+                    7
+                )
         );
 
-        $expected = base64_decode('CgpwaHBoLmxvY2FsEgd1bmtub3duGkgvcHJpdmF0ZS92YXIvZm9sZGVycy9wNS9mbmw5MGdmeDVfNWY5'
-            . 'NTk5czNocHRoZncwMDAwZ3EvVC9pZGUtcGhwdW5pdC5waHAgASgAMICA0AE9gNu9PEWUTE49TWX+UTxQAV0AaIU6aABwAWgCcANg'
-            . 'AnoEdGFnMXoGdmFsdWUxegR0YWcyegZ2YWx1ZTKAAQA=');
+        $expected = base64_decode('CgpwaHBoLmxvY2FsEgd1bmtub3duGkgvcHJpdmF0ZS92'
+            . 'YXIvZm9sZGVycy9wNS9mbmw5MGdmeDVfNWY5NTk5czNocHRoZncwMDAwZ3EvVC9p'
+            . 'ZGUtcGhwdW5pdC5waHAgASgAMICA0AE9gNu9PEWUTE49TWX+UTxQAV0AaIU6aABw'
+            . 'AWgCcANgAnoEdGFnMXoGdmFsdWUxegR0YWcyegZ2YWx1ZTJ6C3RhZ3JlcXVlc3Qx'
+            . 'ehB0YWdyZXF1ZXN0dmFsdWUxegt0YWdyZXF1ZXN0MnoQdGFncmVxdWVzdHZhbHVl'
+            . 'MoABAA==');
 
-        //echo base64_encode(pinba::prepareMessage($testInfo));
+        // echo base64_encode(pinba::prepareMessage($testInfo));
 
         $this->assertSame($expected, pinba::prepareMessage($testInfo));
     }
