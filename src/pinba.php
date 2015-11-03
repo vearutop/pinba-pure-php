@@ -855,10 +855,14 @@ class pinba
                 }
             }
             foreach (self::$requestTags as $tagName => $tagValue) {
-                $tagId = $dictId++;
-                $dict[$tagName] = $tagId;
-                $tagId = $dictId++;
-                $dict[$tagValue] = $tagId;
+                if (!isset($dict[$tagName])) {
+                    $tagId = $dictId++;
+                    $dict[$tagName] = $tagId;
+                }
+                if (!isset($dict[$tagValue])) {
+                    $tagId = $dictId++;
+                    $dict[$tagValue] = $tagId;
+                }
             }
         }
         $struct['dictionary'] = $dict;
